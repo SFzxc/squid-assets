@@ -1,5 +1,6 @@
-import {assertNotNull} from '@subsquid/util-internal'
 import {lookupArchive} from '@subsquid/archive-registry'
+// Import erc20 types generated from  the ABI
+import * as erc20 from "./abi/ERC20";
 import {
     BlockHeader,
     DataHandlerContext,
@@ -10,38 +11,37 @@ import {
 } from '@subsquid/evm-processor'
 
 export const processor = new EvmBatchProcessor()
-    .setDataSource({
-        // Lookup archive by the network name in Subsquid registry
-        // See https://docs.subsquid.io/evm-indexing/supported-networks/
-        archive: lookupArchive('eth-mainnet'),
-        // Chain RPC endpoint is required for
-        //  - indexing unfinalized blocks https://docs.subsquid.io/basics/unfinalized-blocks/
-        //  - querying the contract state https://docs.subsquid.io/evm-indexing/query-state/
-        chain: {
-            // Set the URL via .env for local runs or via secrets when deploying to Subsquid Cloud
-            // https://docs.subsquid.io/deploy-squid/env-variables/
-            url: assertNotNull(process.env.RPC_ENDPOINT),
-            // More RPC connection options at https://docs.subsquid.io/evm-indexing/configuration/initialization/#set-data-source
-            rateLimit: 10
-        }
-    })
-    .setFinalityConfirmation(75)
-    .setFields({
-        transaction: {
-            from: true,
-            value: true,
-            hash: true,
-        },
-    })
-    .setBlockRange({
-        from: 0,
-    })
-    .addTransaction({
-        to: ['0x0000000000000000000000000000000000000000'],
-    })
+  .setDataSource({
+    archive: lookupArchive('eth-mainnet'),
+  })
+  .setBlockRange({ from: 18553109 })
+  .addLog({
+    address: undefined,
+    topic0: [
+      erc20.events.Transfer.topic // topic0: 'Transfer(address,address,uint256)'
+    ],
+    transaction: true,
+  })
+  .setFields({
+    transaction: {
+        from: true,
+        to: true,
+        value: true,
+        hash: true,
+        input: true,
+    },
+    log: {
+      topics: true,
+      data: true
+    }
+  })
 
 export type Fields = EvmBatchProcessorFields<typeof processor>
+
 export type Block = BlockHeader<Fields>
+
 export type Log = _Log<Fields>
+
 export type Transaction = _Transaction<Fields>
+
 export type ProcessorContext<Store> = DataHandlerContext<Store, Fields>

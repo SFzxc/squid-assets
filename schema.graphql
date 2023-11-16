@@ -1,7 +1,9 @@
-type Burn @entity {
+type Transaction @entity {
   id: ID!
-  block: Int!
-  address: String! @index
-  value: BigInt!
-  txHash: String!
+  token: String!
+  amount: BigInt!
+  from: String!
+  recipient: String!
+  txid: String!
+  createdAt: DateTime!
 }
